@@ -9,7 +9,7 @@ export async function seed(knex: Knex): Promise<void> {
     const users = [];
     const emails = new Set<string>(); // Set to track unique emails
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 10; i++) {
         let email;
         // Generate a unique email for each user
         do {
