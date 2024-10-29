@@ -7,8 +7,9 @@
     "strict": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["jest", "node"] // Add jest to the types array    
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "knexfile.ts", "src/**/*.test.ts"],
   "exclude": ["node_modules", "dist"]
 }

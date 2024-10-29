@@ -21,7 +21,7 @@ const healthRouter = Router();
  *                   type: string
  *                   example: API is healthy!
  */
-healthRouter.get('/health', (req: Request, res: Response) => {
+healthRouter.get('/', (req: Request, res: Response) => {
     res.status(200).send({ message: 'API is healthy! 🔋' });
 });
 

@@ -7,7 +7,7 @@ export async function up(knex: Knex): Promise<void> {
         table.enu('type', ['FUND', 'TRANSFER', 'WITHDRAW']).notNullable(); // Enum for transaction types
         table.decimal('amount', 14, 2).notNullable(); // Transaction amount with two decimal precision
         table.uuid('target_wallet_id').nullable().references('id').inTable('wallets').onDelete('SET NULL'); // Optional: Target wallet for transfers
-        table.timestamp('created_at').defaultTo(knex.fn.now()); // Transaction timestamp
+        table.timestamps(true, true); // created_at and updated_at timestamps
     });
 }
 

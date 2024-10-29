@@ -10,13 +10,25 @@ const knexConfig: { [key: string]: Knex.Config } = {
             port: parseInt(config.databasePort),
             user: config.databaseUser,
             password: config.databasePassword,
-            database: config.databaseName,        },
+            database: config.databaseName,
+        },
         migrations: {
             directory: './src/migrations',
         },
         seeds: {
             directory: './src/seeds',
         },
+    },
+    test: {
+        client: "sqlite3",
+        connection: ":memory:",
+        useNullAsDefault: true,
+        migrations: {
+            directory: './src/migrations',
+        },
+        seeds: {
+            directory: './src/seeds',
+        }
     },
     production: {
         client: 'mysql',
