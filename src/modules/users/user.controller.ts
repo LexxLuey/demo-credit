@@ -1,9 +1,11 @@
 // src/modules/users/user.controller.ts
-
+import axios from 'axios';
+import dotenv from 'dotenv';
 import { Request, Response, Router } from 'express';
 import { UserService } from './user.service';
 
 const userRouter = Router();
+
 
 /**
  * @swagger
@@ -34,7 +36,7 @@ const userRouter = Router();
  */
 userRouter.post('/', async (req: Request, res: Response) => {
     const { first_name, middle_name, last_name, email } = req.body;
-
+    
     try {
         const user = await UserService.onboardUser(first_name, last_name, email, middle_name);
         res.status(201).json(user);

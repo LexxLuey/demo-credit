@@ -6,3 +6,8 @@ export interface IWallet extends IBaseEntity {
     userId: string;
     balance: number;
 }
+
+export interface ValidUser {
+    valid: boolean;
+    message: string;
+}

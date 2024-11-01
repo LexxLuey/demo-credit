@@ -1,19 +1,37 @@
 import request from 'supertest';
+import express from 'express';
 import app from '../../../app';
 import knex from '../../../config/knex';
 import { v4 as uuidv4 } from 'uuid';
+import walletRouter from '../wallet.controller';
+import { mockAuthMiddleware } from '../../../middleware/mockFauxAuth';
+import { fauxAuth } from '../../../middleware/fauxAuth';
+
+// const app = express();
+// app.use(express.json());
+
+// app.use(mockAuthMiddleware);
+
+// // Prefix all routes with 'api/'
+// const apiRouter = express.Router();
+
+// apiRouter.use('/wallet', walletRouter); // Health routes at /api/health
+
+// app.use('/api', apiRouter);
+
 
 describe('Wallet Transfer Endpoint', () => {
+    let senderUserId: string;
     let senderWalletId: string;
     let receiverWalletId: string;
 
     // Set up the test database
     beforeAll(async () => {
         await knex.migrate.latest({ directory: './src/migrations' });
-        await knex.seed.run({ directory: './src/seeds' });
+        // await knex.seed.run({ directory: './src/seeds' });
 
         // Create unique user and wallet IDs
-        const senderUserId = uuidv4();
+        senderUserId = uuidv4();
         const receiverUserId = uuidv4();
         senderWalletId = uuidv4();
         receiverWalletId = uuidv4();
@@ -29,6 +47,18 @@ describe('Wallet Transfer Endpoint', () => {
             { id: senderWalletId, user_id: senderUserId, balance: 500 },
             { id: receiverWalletId, user_id: receiverUserId, balance: 200 }
         ]);
+
+        // Set up faux authenticated user as the sender
+        app.use((req, res, next) => {
+            req.authenticatedUser = { id: senderUserId, walletId: senderWalletId, first_name: 'Sender', last_name: 'User', email: 'sender@example.com' };
+            next();
+        });
+    });
+    beforeEach(() => {
+        app.use((req, res, next) => {
+            req.authenticatedUser = { id: senderUserId, walletId: senderWalletId, first_name: 'Sender', last_name: 'User', email: 'sender@example.com' };
+            next();
+        });
     });
 
     afterAll(async () => {
@@ -39,7 +69,6 @@ describe('Wallet Transfer Endpoint', () => {
         const response = await request(app)
             .post('/api/wallet/transfer')
             .send({
-                senderWalletId: senderWalletId,
                 receiverWalletId: receiverWalletId,
                 amount: 100,
             });
@@ -48,11 +77,22 @@ describe('Wallet Transfer Endpoint', () => {
         expect(response.body.message).toBe('Transfer successful');
     });
 
+    test('Catch self-transfer attempt', async () => {
+        const response = await request(app)
+            .post('/api/wallet/transfer')
+            .send({
+                receiverWalletId: senderWalletId, // Using senderWalletId to simulate self-transfer
+                amount: 100,
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe('Cannot transfer funds from self to self');
+    });
+
     test('Insufficient funds', async () => {
         const response = await request(app)
             .post('/api/wallet/transfer')
             .send({
-                senderWalletId: senderWalletId,
                 receiverWalletId: receiverWalletId,
                 amount: 10000, // Exceeds balance
             });
@@ -61,24 +101,10 @@ describe('Wallet Transfer Endpoint', () => {
         expect(response.body.message).toBe('Insufficient funds');
     });
 
-    test('Invalid sender wallet', async () => {
-        const response = await request(app)
-            .post('/api/wallet/transfer')
-            .send({
-                senderWalletId: 'invalid-sender-wallet-id',
-                receiverWalletId: receiverWalletId,
-                amount: 100,
-            });
-
-        expect(response.status).toBe(400);
-        expect(response.body.message).toBe('Sender wallet not found');
-    });
-
     test('Invalid receiver wallet', async () => {
         const response = await request(app)
             .post('/api/wallet/transfer')
             .send({
-                senderWalletId: senderWalletId,
                 receiverWalletId: 'invalid-receiver-wallet-id',
                 amount: 100,
             });
@@ -87,11 +113,33 @@ describe('Wallet Transfer Endpoint', () => {
         expect(response.body.message).toBe('Receiver wallet not found');
     });
 
+    test('Invalid sender wallet', async () => {
+        const originalAuth = app._router.stack.find((layer: any) => layer.handle === fauxAuth);
+        if (originalAuth) originalAuth.handle = (req: any, res: any, next: any) => {
+            req.authenticatedUser = {
+                id: senderUserId,
+                walletId: 'invalid-wallet-id',
+                first_name: 'Test',
+                last_name: 'User',
+                email: 'testuser@example.com'
+            };
+            next();
+        };        
+        const response = await request(app)
+            .post('/api/wallet/transfer')
+            .send({
+                receiverWalletId: receiverWalletId,
+                amount: 100,
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe('Sender wallet not found');
+    });
+
     test('Invalid transfer amount (negative)', async () => {
         const response = await request(app)
             .post('/api/wallet/transfer')
             .send({
-                senderWalletId: senderWalletId,
                 receiverWalletId: receiverWalletId,
                 amount: -100, // Invalid negative amount
             });
@@ -100,5 +148,3 @@ describe('Wallet Transfer Endpoint', () => {
         expect(response.body.message).toBe('Transfer amount must be greater than zero');
     });
 });
-
-
