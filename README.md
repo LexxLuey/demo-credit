@@ -38,35 +38,39 @@ This API is built with Node.js and TypeScript, following 12-factor app principle
 The project follows a modular, feature-based structure inspired by NestJS, ensuring each feature (module) has its own controller, service, and model. Common utilities and configurations are managed separately to enable reusability and scalability.
 
 ```plaintext
+### Project Structure
+
+```plaintext
 ├── src
-│   ├── config                   # Configuration files for environment variables and Swagger
-│   │   ├── env.config.ts        # Loads environment variables for the application
-│   │   └── swagger.config.ts    # Configures Swagger documentation setup
-│   ├── middleware               # Custom middleware for request handling (e.g., error handling)
-│   ├── migrations               # Knex migration files to define database schema
-│   │   ├── create_users_table.ts         # Migration for creating the `users` table
-│   │   ├── create_wallets_table.ts       # Migration for creating the `wallets` table
-│   │   └── create_transactions_table.ts  # Migration for creating the `transactions` table
-│   ├── modules                  # Modular structure for core features, each feature has its own directory
-│   │   ├── health               # Health module to handle API health check
-│   │   │   └── health.controller.ts  # Health check route definition
-│   │   ├── transaction          # Transaction module for handling fund transfers and records
-│   │   ├── users                # User module for user-related logic, models, and routes
-│   │   └── wallet               # Wallet module for wallet creation, funding, and balance management
-│   ├── seeds                    # Seeder files for populating the database with test data
-│   │   ├── seed_users.ts        # Seeds initial users into the database
-│   │   └── seed_wallets.ts      # Seeds initial wallets linked to users
-│   ├── tests                    # Test files for unit and integration tests
-│   ├── utils                    # Utility functions and helpers
-│   ├── app.ts                   # Main app configuration and middleware setup
-│   └── server.ts                # Server bootstrap file, initializing and starting the Express app
-├── knexfile.ts                  # Knex configuration for database connection and migrations
-├── LICENSE                      # Project license
-├── package.json                 # NPM dependencies and scripts
-├── package-lock.json            # Locked versions of NPM dependencies
-├── README.md                    # Project documentation (this file)
-├── roadmap.md                   # Roadmap for development phases and milestones
-├── tsconfig.json                # TypeScript configuration
+│   ├── config
+│   │   ├── env.config.ts            # Environment variables configuration
+│   │   ├── knex.ts                  # Knex database connection configuration
+│   │   └── swagger.config.ts        # Swagger documentation configuration
+│   ├── middleware
+│   │   ├── fauxAuth.ts              # Faux authentication middleware
+│   │   └── mockFauxAuth.ts          # Mock authentication for testing
+│   ├── migrations                   # Database migrations for users, wallets, and transactions
+│   ├── modules
+│   │   ├── health                   # Health check endpoint
+│   │   ├── shared
+│   │   │   ├── interfaces           # Base interface for shared types
+│   │   │   └── models               # Base models for shared entities
+│   │   ├── transactions             # Transaction-related logic
+│   │   ├── users                    # User-related logic
+│   │   └── wallet                   # Wallet-related logic
+│   ├── seeds                        # Database seed files for users and wallets
+│   ├── tests                        # Root-level folder for end-to-end tests
+│   ├── types
+│   │   ├── express                  # Custom Express request types for authenticated user
+│   │   └── custom.ts                # Custom type definitions
+│   ├── utils                        # Utility functions (if needed)
+│   ├── app.ts                       # Application entry point
+│   └── server.ts                    # Server setup
+├── jest.config.js                   # Jest testing configuration
+├── knexfile.ts                      # Knex configuration file
+├── README.md                        # Project documentation
+├── roadmap.md                       # Project roadmap
+└── tsconfig.json                    # TypeScript configuration
 └── .env                         # Environment variables file (ignored in version control)
 └── .env.sample                  # Sample environment file to guide developers on required variables
 ```
@@ -161,6 +165,12 @@ The database schema consists of three main tables: `users`, `wallets`, and `tran
 
 ---
 
+## Authentication
+
+This project implements a **faux token-based authentication** mechanism. The last created user in the database is considered the authenticated user for each request. This user information, including the user’s wallet ID, is attached to `req.authenticatedUser` by the `fauxAuth` middleware for all relevant endpoints.
+
+
+
 ## API Documentation
 
 Swagger documentation for this API is available at `/api/docs`.
@@ -197,6 +207,68 @@ Swagger documentation for this API is available at `/api/docs`.
 
 6. **Check Balance**
    - **GET `/wallets/balance?walletId=<wallet-id>`**: Returns the current wallet balance.
+
+### Wallet Endpoints
+
+- **POST /wallet/fund** - Fund the authenticated user's wallet with a specified amount.
+  - **Request Body**:
+    ```json
+    { "amount": number }
+    ```
+  - **Response**:
+    ```json
+    { "message": "Wallet funded successfully", "balance": number }
+    ```
+  - **Error Responses**:
+    - `401 Unauthorized`: User not authenticated or has no wallet.
+    - `404 Not Found`: Wallet not found.
+
+- **POST /wallets/transfer** - Transfer funds from the authenticated user's wallet to another wallet.
+  - **Request Body**:
+    ```json
+    { "receiverWalletId": string, "amount": number }
+    ```
+  - **Response**:
+    ```json
+    { "message": "Transfer successful", "amount": number, "receiverWalletId": string }
+    ```
+  - **Error Responses**:
+    - `401 Unauthorized`: User not authenticated or has no wallet.
+    - `400 Bad Request`: Attempt to transfer to self, insufficient funds, or invalid wallet.
+
+- **POST /wallets/withdraw** - Withdraw funds from the authenticated user's wallet.
+  - **Request Body**:
+    ```json
+    { "amount": number }
+    ```
+  - **Response**:
+    ```json
+    { "message": "Withdrawal successful", "balance": number }
+    ```
+  - **Error Responses**:
+    - `401 Unauthorized`: User not authenticated or has no wallet.
+    - `400 Bad Request`: Insufficient funds.
+
+- **GET /wallets/transactions** - Retrieve a paginated list of the authenticated user's transaction history.
+  - **Query Parameters**:
+    - `page` (number): Page number for pagination.
+    - `limit` (number): Number of transactions per page.
+  - **Response**:
+    ```json
+    { "data": [transactions], "page": number, "limit": number, "total": number }
+    ```
+  - **Error Responses**:
+    - `401 Unauthorized`: User not authenticated or has no wallet.
+    - `400 Bad Request`: Invalid wallet or retrieval error.
+
+- **GET /wallets/balance** - Check the current balance of the authenticated user's wallet.
+  - **Response**:
+    ```json
+    { "walletId": string, "balance": number }
+    ```
+  - **Error Responses**:
+    - `401 Unauthorized`: User not authenticated or has no wallet.
+    - `400 Bad Request`: Invalid wallet ID or balance retrieval error.
 
 ---
 

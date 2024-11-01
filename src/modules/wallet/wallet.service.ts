@@ -12,7 +12,13 @@ export class WalletService {
         const walletId = uuidv4();
         const newWallet: IWallet = new Wallet(walletId, userId, 0);
 
-        await knex('wallets').insert(newWallet);
+        await knex('wallets').insert({
+            id: newWallet.id,
+            user_id: newWallet.userId,
+            balance: 0,
+            created_at: newWallet.createdAt,
+            updated_at: newWallet.updatedAt
+        });
         return newWallet;
     }
 
@@ -61,19 +67,24 @@ export class WalletService {
             // Fetch receiver wallet
             const receiverWallet = await trx('wallets').where({ id: receiverWalletId }).first();
             if (!receiverWallet) throw new Error('Receiver wallet not found');
+            
+            if (receiverWallet.id === senderWallet.id) throw new Error('Cannot transfer funds from self to self');
 
             // Check sufficient funds
-            if (senderWallet.balance < amount) throw new Error('Insufficient funds');
+            const senderBalance = Number(senderWallet.balance)
+            const receiverBalance = Number(receiverWallet.balance)
+
+            if (senderBalance < amount) throw new Error('Insufficient funds');
 
             // Update sender's wallet balance
-            const updatedSenderBalance = senderWallet.balance - amount;
+            const updatedSenderBalance = senderBalance - amount;
             await trx('wallets').where({ id: senderWalletId }).update({
                 balance: updatedSenderBalance,
                 updated_at: new Date(),
             });
 
             // Update receiver's wallet balance
-            const updatedReceiverBalance = receiverWallet.balance + amount;
+            const updatedReceiverBalance = receiverBalance + amount;
             await trx('wallets').where({ id: receiverWalletId }).update({
                 balance: updatedReceiverBalance,
                 updated_at: new Date(),
@@ -139,4 +150,39 @@ export class WalletService {
         // Return success response
         return { message: 'Withdrawal successful', walletId, amount };
     }
+
+    static async getTransactionHistory(walletId: string, page: number, limit: number) {
+        const offset = (page - 1) * limit;
+        const wallet = await knex('wallets').where({ id: walletId }).first();
+        if (!wallet) throw new Error('Wallet not found');        
+
+        // Fetch transactions with pagination
+        const transactions = await knex('transactions')
+            .where({ wallet_id: walletId })
+            .orderBy('created_at', 'desc')
+            .limit(limit)
+            .offset(offset);
+
+        const total = await knex('transactions').where({ wallet_id: walletId }).count('* as count').first();
+
+        return {
+            data: transactions,
+            page,
+            limit,
+            total: total?.count || 0,
+        };
+    }
+
+    static async getBalance(walletId: string) {
+        const wallet = await knex('wallets').where({ id: walletId }).first();
+        if (!wallet) throw new Error('Wallet not found');
+        return Number(wallet.balance);
+    }
+
+    static async getWalletId(userId: string) {
+        const wallet = await knex('wallets').where({ user_id: userId }).first();
+        if (!wallet) throw new Error('Wallet not found');
+        return wallet.id;
+    }
+
 }
