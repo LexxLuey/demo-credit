@@ -109,4 +109,71 @@ describe('User Onboarding', () => {
         const user = await knex('users').where({ email: 'sarah.smith@example.com' }).first();
         expect(user).toBeUndefined();
     });
+
+    test('Rejects onboarding with invalid email format', async () => {
+        const response = await request(app)
+            .post('/api/users')
+            .send({
+                first_name: 'Invalid',
+                middle_name: 'User',
+                last_name: 'Email',
+                email: 'invalid-email-format'
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ msg: 'Invalid email format' })
+            ])
+        );
+    });
+
+    test('Rejects onboarding with script tags in first_name', async () => {
+        const response = await request(app)
+            .post('/api/users')
+            .send({
+                first_name: '<script>alert("hack")</script>',
+                middle_name: 'Middle',
+                last_name: 'Doe',
+                email: 'script.hacker@example.com'
+            });
+    
+        expect(response.status).toBe(400);
+    });
+
+    test('Rejects onboarding when required fields are missing', async () => {
+        const response = await request(app)
+            .post('/api/users')
+            .send({
+                email: 'missing.fields@example.com'
+            });
+    
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ msg: 'First name is required' }),
+                expect.objectContaining({ msg: 'Last name is required' })
+            ])
+        );
+    });
+
+    test('Rejects onboarding when first_name exceeds max length', async () => {
+        const response = await request(app)
+            .post('/api/users')
+            .send({
+                first_name: 'A'.repeat(300), // Excessive length
+                middle_name: 'Middle',
+                last_name: 'Doe',
+                email: 'longname@example.com'
+            });
+    
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ msg: 'First name must be at most 100 characters' })
+            ])
+        );
+    });
+    
+
 });
