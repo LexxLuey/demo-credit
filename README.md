@@ -157,7 +157,7 @@ The database schema consists of three main tables: `users`, `wallets`, and `tran
 ![ER Diagram](lendsqr-be-test_1.png)
 
 1. **Users**: Stores user information.
-   - **Fields**: `id`, `name`, `email`, `created_at`, `updated_at`
+   - **Fields**: `id`, `first_name`, `middle_name`, `last_name`, `email`, `created_at`, `updated_at`
 2. **Wallets**: Tracks each user’s wallet and balance.
    - **Fields**: `id`, `user_id` (foreign key), `balance`, `created_at`, `updated_at`
 3. **Transactions**: Records all transactions, including fund, transfer, and withdrawal.

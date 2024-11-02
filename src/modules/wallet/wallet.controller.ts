@@ -53,9 +53,7 @@ walletRouter.post('/fund', validateAmount, async (req: Request, res: Response) =
     try {
         const updatedWallet = await WalletService.fundWallet(walletId, amount);
         res.status(200).json(updatedWallet);
-    } catch (error) {
-        console.log(error);
-        
+    } catch (error) {        
         res.status(400).json({ message: error instanceof Error ? error.message : 'Error Funding Wallet' });
     }
 });
