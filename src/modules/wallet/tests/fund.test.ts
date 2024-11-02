@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { fauxAuth } from '../../../middleware/fauxAuth';
 
 
-describe('Wallet Withdrawal Endpoint', () => {
+describe('Wallet Funding Endpoint', () => {
     let walletId: string;
     const userId = uuidv4();
 
@@ -48,28 +48,15 @@ describe('Wallet Withdrawal Endpoint', () => {
         await knex.destroy();
     });
 
-    test('Successful withdrawal', async () => {
+    test('Successful funding', async () => {
         const response = await request(app)
-            .post('/api/wallet/withdraw')
+            .post('/api/wallet/fund')
             .send({
-                walletId: walletId,
                 amount: 100,
             });
 
         expect(response.status).toBe(200);
-        expect(response.body.message).toBe('Withdrawal successful');
-    });
-
-    test('Insufficient funds', async () => {
-        const response = await request(app)
-            .post('/api/wallet/withdraw')
-            .send({
-                walletId: walletId,
-                amount: 10000, // Exceeds balance
-            });
-
-        expect(response.status).toBe(400);
-        expect(response.body.message).toBe('Insufficient funds');
+        expect(response.body.message).toBe('Wallet funding successful');
     });
 
     test('Invalid wallet ID', async () => {
@@ -87,7 +74,7 @@ describe('Wallet Withdrawal Endpoint', () => {
         }; 
 
         const response = await request(app)
-            .post('/api/wallet/withdraw')
+            .post('/api/wallet/fund')
             .send({
                 amount: 100,
             });
@@ -96,19 +83,32 @@ describe('Wallet Withdrawal Endpoint', () => {
         expect(response.body.message).toBe('Wallet not found');
     });
 
-    test('Invalid withdrawal amount (negative)', async () => {
+    test('Invalid funding amount (negative)', async () => {
         const response = await request(app)
-            .post('/api/wallet/withdraw')
+            .post('/api/wallet/fund')
             .send({
-                walletId: walletId,
                 amount: -100, // Negative amount
             });
 
         expect(response.status).toBe(400);
-        // expect(response.body.message).toBe('Withdrawal amount must be greater than zero');
         expect(response.body.errors).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({ msg: 'Amount must be greater than zero' })
+            ])
+        );
+    });
+
+    test('Maximum transaction amount', async () => {
+        const response = await request(app)
+            .post('/api/wallet/fund')
+            .send({
+                amount: 9999999999990,
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ msg: 'Maximum transaction amount exceeded' })
             ])
         );
     });

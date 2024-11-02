@@ -30,8 +30,6 @@ export class WalletService {
 
             // Update wallet balance
             const updatedBalance = Number(wallet.balance) + Number(amount);
-            console.log(updatedBalance);
-            console.log(wallet.balance);
 
             await trx('wallets').where({ id: walletId }).update({
                 balance: updatedBalance,
@@ -52,7 +50,8 @@ export class WalletService {
         });
 
         // Return updated wallet
-        return await knex('wallets').where({ id: walletId }).first();
+        const wallet = await knex('wallets').where({ id: walletId }).first();
+        return {...wallet, message: 'Wallet funding successful' }
     }
 
     // Transfer funds from one wallet to another

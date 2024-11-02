@@ -1,7 +1,5 @@
 // src/middleware/mockAuthMiddleware.ts
 import { Request, Response, NextFunction } from 'express';
-import knex from '../config/knex';
-import { v4 as uuidv4 } from 'uuid';
 
 export const mockAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     console.log('Request Mock Object:', {

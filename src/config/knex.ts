@@ -1,5 +1,3 @@
-// src/config/knex.ts
-
 import knex from 'knex';
 import knexConfig from '../../knexfile';
 

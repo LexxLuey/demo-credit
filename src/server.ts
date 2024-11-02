@@ -7,5 +7,5 @@ try {
         console.log(chalk.green.bold(`🚀🚀🚀 Server is running on port ${chalk.whiteBright(config.port)}`));
     });    
 } catch (error) {
-    console.log(chalk.red.bold(`😵 Server failed to start with error: ${error}`));
+    console.log(chalk.red.bold(`😵 Server failed to start with error: ${chalk.white.bold(error)}`));
 }

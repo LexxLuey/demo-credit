@@ -1,20 +1,16 @@
 import { IUser } from './interfaces/user.interface';
 import { User } from './user.model';
 import { v4 as uuidv4 } from 'uuid';
-import { config } from '../../config/env.config';
 import knex from '../../config/knex';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import dotenv from 'dotenv';
 import { WalletService } from '../wallet/wallet.service';
 
-// Load environment variables from .env file
 dotenv.config();
 
-// Define the base URL for the Karma endpoint
 const BASE_URL = 'https://adjutor.lendsqr.com/v2/verification/karma';
 
 export class UserService {
-    // Function to check if a customer is on the blacklist
     static async checkCustomerKarma(identity: string): Promise<boolean> {
         try {
             const response = await axios.get(`${BASE_URL}/${identity}`, {

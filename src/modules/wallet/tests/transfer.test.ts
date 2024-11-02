@@ -1,23 +1,8 @@
 import request from 'supertest';
-import express from 'express';
 import app from '../../../app';
 import knex from '../../../config/knex';
 import { v4 as uuidv4 } from 'uuid';
-import walletRouter from '../wallet.controller';
-import { mockAuthMiddleware } from '../../../middleware/mockFauxAuth';
 import { fauxAuth } from '../../../middleware/fauxAuth';
-
-// const app = express();
-// app.use(express.json());
-
-// app.use(mockAuthMiddleware);
-
-// // Prefix all routes with 'api/'
-// const apiRouter = express.Router();
-
-// apiRouter.use('/wallet', walletRouter); // Health routes at /api/health
-
-// app.use('/api', apiRouter);
 
 
 describe('Wallet Transfer Endpoint', () => {
@@ -124,7 +109,7 @@ describe('Wallet Transfer Endpoint', () => {
                 email: 'testuser@example.com'
             };
             next();
-        };        
+        };
         const response = await request(app)
             .post('/api/wallet/transfer')
             .send({
@@ -145,11 +130,10 @@ describe('Wallet Transfer Endpoint', () => {
             });
 
         expect(response.status).toBe(400);
-        // expect(response.body.message).toBe('Transfer amount must be greater than zero');
         expect(response.body.errors).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({ msg: 'Amount must be greater than zero' })
             ])
-        );        
+        );
     });
 });

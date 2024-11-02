@@ -1,4 +1,3 @@
-// src/modules/health/health.controller.ts
 import { Request, Response, Router } from 'express';
 
 const healthRouter = Router();
