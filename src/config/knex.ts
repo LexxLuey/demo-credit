@@ -1,7 +1,7 @@
 // src/config/knex.ts
 
 import knex from 'knex';
-import knexConfig from '../knexfile';
+import knexConfig from '../../knexfile';
 
 // Select the correct environment
 const environment = process.env.NODE_ENV || 'development';

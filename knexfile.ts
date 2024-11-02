@@ -1,11 +1,11 @@
 // knexfile.ts
 import { Knex } from 'knex';
-import { config } from './config/env.config';
+import { config } from './src/config/env.config';
 
 const knexConfig: { [key: string]: Knex.Config } = {
     development: {
         client: 'mysql2',
-        connection: config.databaseUrl || {
+        connection:  {
             host: config.databaseHost,
             port: parseInt(config.databasePort),
             user: config.databaseUser,

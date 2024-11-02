@@ -5,7 +5,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
     "strict": true,
     "moduleResolution": "node",
@@ -15,7 +15,7 @@
     "typeRoots": ["./src/types", "./node_modules/@types"],    
 
   },
-  "include": ["src/**/*", "src/knexfile.ts", "src/**/*.test.ts"],
+  "include": ["src/**/*", "knexfile.ts", "src/**/*.test.ts"],
   "exclude": ["node_modules", "dist"],
   // "files":["types.d.ts"]
 }
