@@ -2,7 +2,8 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "types": ["node"], // Only include 'node' for production
-        "outDir": "./dist"
+        "rootDir": ".",
+        "outDir": "dist",
     },
     "exclude": ["**/*.test.ts", "knexfile.ts", "node_modules", "dist"]
 }
