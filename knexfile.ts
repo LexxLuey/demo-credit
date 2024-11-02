@@ -31,8 +31,16 @@ const knexConfig: { [key: string]: Knex.Config } = {
         }
     },
     production: {
-        client: 'mysql',
-        connection: config.databaseUrl,
+        client: 'pg',
+        connection: {
+            connectionString: config.databaseUrl,
+            host: config.databaseHost,
+            port: parseInt(config.databasePort),
+            user: config.databaseUser,
+            database: config.databaseName,
+            password: config.databasePassword,
+            // ssl: false,
+        },
         migrations: {
             directory: './src/migrations',
         },
