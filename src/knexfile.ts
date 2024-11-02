@@ -33,7 +33,6 @@ const knexConfig: { [key: string]: Knex.Config } = {
     production: {
         client: 'pg',
         connection: {
-            connectionString: config.databaseUrl,
             host: config.databaseHost,
             port: parseInt(config.databasePort),
             user: config.databaseUser,
