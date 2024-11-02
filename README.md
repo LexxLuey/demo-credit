@@ -154,7 +154,7 @@ ADJUTOR_API_KEY=your_adjutor_api_key
 
 The database schema consists of three main tables: `users`, `wallets`, and `transactions`.
 
-![ER Diagram](https://link-to-er-diagram)
+![ER Diagram](lendsqr-be-test_1.png)
 
 1. **Users**: Stores user information.
    - **Fields**: `id`, `name`, `email`, `created_at`, `updated_at`
@@ -292,12 +292,12 @@ npm test
 
 ## Deployment
 
-1. **Hosting Platform**: The application can be deployed on Heroku or any other cloud provider.
+1. **Hosting Platform**: The application can be deployed on Heroku or any other cloud provider. It currently finds its home on render.com
 2. **Build for Production**:
    ```bash
    npm run build
    ```
-3. **Deploy URL Structure**: Deploy using the URL format `https://<candidate-name>-lendsqr-be-test.<cloud-domain>`.
+3. **Deploy URL Structure**: Deploy using the URL format `https://lex-lutor-lendsqr-be-test.onrender.com`.
 
 ---
 

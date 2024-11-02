@@ -4,7 +4,7 @@ import knex from '../config/knex';
 export const fauxAuth: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const lastUser = await knex('users').orderBy('created_at', 'asc').first();
-        
+
         if (lastUser) {
             const wallet = await knex('wallets').where({ user_id: lastUser?.id }).first();
             req.authenticatedUser = {
@@ -15,15 +15,6 @@ export const fauxAuth: RequestHandler = async (req: Request, res: Response, next
                 last_name: lastUser.last_name,
                 email: lastUser.email,
             };
-            // console.log('Request Object:', {
-            //     method: req.method,
-            //     url: req.url,
-            //     // headers: req.headers,
-            //     body: req.body,
-            //     query: req.query,
-            //     params: req.params,
-            //     authenticatedUser: req.authenticatedUser, // Custom property if set by auth middleware
-            // });
         } else {
             res.status(401).json({ message: 'No authenticated user available' });
             return;
@@ -31,7 +22,7 @@ export const fauxAuth: RequestHandler = async (req: Request, res: Response, next
         next();
     } catch (error) {
         console.error(error);
-        
+
         res.status(500).json({ message: 'Error retrieving authenticated user' });
     }
 };

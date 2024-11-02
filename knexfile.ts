@@ -38,7 +38,6 @@ const knexConfig: { [key: string]: Knex.Config } = {
             user: config.databaseUser,
             database: config.databaseName,
             password: config.databasePassword,
-            // ssl: false,
         },
         migrations: {
             directory: './src/migrations',
