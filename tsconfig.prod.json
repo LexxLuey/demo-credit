@@ -4,5 +4,5 @@
         "types": ["node"], // Only include 'node' for production
         "outDir": "./dist"
     },
-    "exclude": ["**/*.test.ts", "src/knexfile.ts", "node_modules", "dist"]
+    "exclude": ["**/*.test.ts", "knexfile.ts", "node_modules", "dist"]
 }
