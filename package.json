@@ -13,8 +13,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^22.8.1",
     "@types/express": "^5.0.0",
+    "@types/node": "^22.8.1",
     "axios": "^1.7.7",
     "chalk": "4.1.2",
     "dotenv": "^16.4.5",
@@ -22,6 +22,7 @@
     "knex": "^3.1.0",
     "mysql": "^2.18.1",
     "mysql2": "^3.11.3",
+    "pg": "^8.13.1",
     "sqlite3": "^5.1.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
