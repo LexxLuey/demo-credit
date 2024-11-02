@@ -3,6 +3,8 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import { Request, Response, Router } from 'express';
 import { UserService } from './user.service';
+import { validateUserOnboarding } from './user.validators';
+import { validationResult } from 'express-validator';
 
 const userRouter = Router();
 
@@ -34,7 +36,12 @@ const userRouter = Router();
  *       400:
  *         description: Bad request or user is blacklisted
  */
-userRouter.post('/', async (req: Request, res: Response) => {
+userRouter.post('/', validateUserOnboarding, async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+        return;
+    }
     const { first_name, middle_name, last_name, email } = req.body;
     
     try {

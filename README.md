@@ -188,25 +188,25 @@ Swagger documentation for this API is available at `/api/docs`.
 
 1. **User Onboarding**
    - **POST `/users`**: Creates a new user, ensuring the user is not blacklisted via Adjutor Karma API.
-   - **Request**: `{ "name": "John Doe", "email": "john@example.com" }`
+   - **Request**: `{ "first_name": "John", "middle_name": "Doe", "last_name": "Q", "email": "john@example.com" }`
 
 2. **Fund Wallet**
    - **POST `/wallets/fund`**: Adds funds to a user’s wallet.
-   - **Request**: `{ "walletId": "<wallet-id>", "amount": 1000 }`
+   - **Request**: `{ "amount": 1000 }`
 
 3. **Transfer Funds**
    - **POST `/wallets/transfer`**: Transfers funds between users.
-   - **Request**: `{ "senderWalletId": "<wallet-id>", "receiverWalletId": "<wallet-id>", "amount": 200 }`
+   - **Request**: `{ "receiverWalletId": "<wallet-id>", "amount": 200 }`
 
 4. **Withdraw Funds**
    - **POST `/wallets/withdraw`**: Withdraws funds from a user’s wallet.
-   - **Request**: `{ "walletId": "<wallet-id>", "amount": 500 }`
+   - **Request**: `{ "amount": 500 }`
 
 5. **Transaction History**
-   - **GET `/wallets/transactions?walletId=<wallet-id>&page=1&limit=10`**: Retrieves transaction history for a user’s wallet.
+   - **GET `/wallets/transactions?&page=1&limit=10`**: Retrieves transaction history for a user’s wallet.
 
 6. **Check Balance**
-   - **GET `/wallets/balance?walletId=<wallet-id>`**: Returns the current wallet balance.
+   - **GET `/wallets/balance`**: Returns the current wallet balance.
 
 ### Wallet Endpoints
 

@@ -2,6 +2,8 @@
 
 import { Request, Response, Router } from 'express';
 import { WalletService } from './wallet.service';
+import { validateAmount } from './wallet.validators';
+import { validationResult } from 'express-validator';
 
 const walletRouter = Router();
 
@@ -29,7 +31,12 @@ const walletRouter = Router();
  *       404:
  *         description: Wallet not found
  */
-walletRouter.post('/fund', async (req: Request, res: Response) => {
+walletRouter.post('/fund', validateAmount, async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+        return
+    }
     const { amount } = req.body;
     const userId = req.authenticatedUser?.id;
 
@@ -79,7 +86,12 @@ walletRouter.post('/fund', async (req: Request, res: Response) => {
  *       401:
  *         description: User not authenticated or has no wallet
  */
-walletRouter.post('/transfer', async (req: Request, res: Response) => {
+walletRouter.post('/transfer', validateAmount, async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+        return
+    }
     const { receiverWalletId, amount } = req.body;
     const userId = req.authenticatedUser?.id;
 
@@ -126,7 +138,12 @@ walletRouter.post('/transfer', async (req: Request, res: Response) => {
  *       401:
  *         description: User not authenticated or has no wallet
  */
-walletRouter.post('/withdraw', async (req: Request, res: Response) => {
+walletRouter.post('/withdraw', validateAmount, async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+        return
+    }
     const { amount } = req.body;
     const userId = req.authenticatedUser?.id;
 

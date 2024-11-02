@@ -145,6 +145,11 @@ describe('Wallet Transfer Endpoint', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.message).toBe('Transfer amount must be greater than zero');
+        // expect(response.body.message).toBe('Transfer amount must be greater than zero');
+        expect(response.body.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ msg: 'Amount must be greater than zero' })
+            ])
+        );        
     });
 });
