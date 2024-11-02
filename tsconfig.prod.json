@@ -3,7 +3,7 @@
     "compilerOptions": {
         "types": ["node"], // Only include 'node' for production
         "rootDir": ".",
-        "outDir": "dist",
+        "outDir": "./dist",
     },
     "exclude": ["**/*.test.ts", "knexfile.ts", "node_modules", "dist"]
 }
