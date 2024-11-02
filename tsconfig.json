@@ -15,7 +15,7 @@
     "typeRoots": ["./src/types", "./node_modules/@types"],    
 
   },
-  "include": ["src/**/*", "knexfile.ts", "src/**/*.test.ts"],
+  "include": ["src/**/*", "src/knexfile.ts", "src/**/*.test.ts"],
   "exclude": ["node_modules", "dist"],
   // "files":["types.d.ts"]
 }

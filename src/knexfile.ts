@@ -1,6 +1,6 @@
 // knexfile.ts
 import { Knex } from 'knex';
-import { config } from './src/config/env.config';
+import { config } from './config/env.config';
 
 const knexConfig: { [key: string]: Knex.Config } = {
     development: {
