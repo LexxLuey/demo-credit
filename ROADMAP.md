@@ -76,6 +76,12 @@ An optimized product roadmap to build and deliver this wallet service API. It is
    - **Health Endpoint**: Implement `GET /health` for basic API health monitoring.
    - **Tests**: Add tests to confirm the endpoint responds appropriately.
 
+4. **List Endpoints with Search and Pagination** ✅ **COMPLETED**
+   - **Users List**: Implement `GET /users` with search and pagination for user management.
+   - **Wallets List**: Implement `GET /wallet` with search and pagination for wallet overview.
+   - **Search Functionality**: Add search across user names, emails, and wallet IDs.
+   - **Pagination**: Efficient handling of large datasets with configurable page sizes.
+
 ---
 
 ### **Phase 5: Final Touches and Deployment Preparation**  

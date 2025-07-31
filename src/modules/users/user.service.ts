@@ -68,4 +68,59 @@ export class UserService {
 
         return newUser;
     }
+
+    // Get all users with search and pagination
+    static async getAllUsers(page: number = 1, limit: number = 10, search?: string): Promise<{
+        data: IUser[];
+        page: number;
+        limit: number;
+        total: number;
+    }> {
+        const offset = (page - 1) * limit;
+        
+        let query = knex('users')
+            .select('id', 'first_name', 'middle_name', 'last_name', 'email', 'created_at', 'updated_at');
+        
+        // Add search functionality
+        if (search) {
+            query = query.where(function() {
+                this.where('first_name', 'like', `%${search}%`)
+                    .orWhere('last_name', 'like', `%${search}%`)
+                    .orWhere('email', 'like', `%${search}%`)
+                    .orWhere('middle_name', 'like', `%${search}%`);
+            });
+        }
+        
+        const users = await query
+            .orderBy('created_at', 'desc')
+            .limit(limit)
+            .offset(offset);
+
+        // Get total count for pagination
+        let countQuery = knex('users');
+        if (search) {
+            countQuery = countQuery.where(function() {
+                this.where('first_name', 'like', `%${search}%`)
+                    .orWhere('last_name', 'like', `%${search}%`)
+                    .orWhere('email', 'like', `%${search}%`)
+                    .orWhere('middle_name', 'like', `%${search}%`);
+            });
+        }
+        const total = await countQuery.count('* as count').first();
+
+        return {
+            data: users.map(user => new User(
+                user.id,
+                user.first_name,
+                user.last_name,
+                user.email,
+                user.middle_name,
+                user.created_at,
+                user.updated_at
+            )),
+            page,
+            limit,
+            total: Number(total?.count) || 0,
+        };
+    }
 }
