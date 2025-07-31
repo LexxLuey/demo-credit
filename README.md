@@ -190,7 +190,11 @@ Swagger documentation for this API is available at `/api/docs`.
    - **POST `/users`**: Creates a new user, ensuring the user is not blacklisted via Adjutor Karma API.
    - **Request**: `{ "first_name": "John", "middle_name": "Doe", "last_name": "Q", "email": "john@example.com" }`
 
-2. **Fund Wallet**
+2. **List Users**
+   - **GET `/users?page=1&limit=10&search=john`**: Retrieves paginated and searchable list of users.
+   - **Query Parameters**: `page` (default: 1), `limit` (default: 10, max: 100), `search` (optional)
+
+3. **Fund Wallet**
    - **POST `/wallets/fund`**: Adds funds to a user’s wallet.
    - **Request**: `{ "amount": 1000 }`
 
@@ -209,6 +213,36 @@ Swagger documentation for this API is available at `/api/docs`.
    - **GET `/wallets/balance`**: Returns the current wallet balance.
 
 ### Wallet Endpoints
+
+- **GET /wallet** - Retrieve a paginated and searchable list of all wallets in the system.
+  - **Query Parameters**:
+    - `page` (number): Page number for pagination (default: 1).
+    - `limit` (number): Number of wallets per page (default: 10, max: 100).
+    - `search` (string): Search term to filter wallets by user name, email, or wallet ID.
+  - **Response**:
+    ```json
+    {
+      "data": [
+        {
+          "id": "wallet-id",
+          "user_id": "user-id",
+          "balance": 1500.75,
+          "created_at": "2024-01-15T10:30:00.000Z",
+          "updated_at": "2024-01-15T10:35:00.000Z",
+          "user": {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john.doe@example.com"
+          }
+        }
+      ],
+      "page": 1,
+      "limit": 10,
+      "total": 25
+    }
+    ```
+  - **Error Responses**:
+    - `500 Internal Server Error`: Database error or server issue.
 
 - **POST /wallet/fund** - Fund the authenticated user's wallet with a specified amount.
   - **Request Body**:

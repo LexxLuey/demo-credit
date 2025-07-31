@@ -184,4 +184,71 @@ export class WalletService {
         return wallet.id;
     }
 
+    // Get all wallets with search and pagination
+    static async getAllWallets(page: number = 1, limit: number = 10, search?: string): Promise<{
+        data: any[];
+        page: number;
+        limit: number;
+        total: number;
+    }> {
+        const offset = (page - 1) * limit;
+        
+        let query = knex('wallets')
+            .join('users', 'wallets.user_id', 'users.id')
+            .select(
+                'wallets.id',
+                'wallets.user_id',
+                'wallets.balance',
+                'wallets.created_at',
+                'wallets.updated_at',
+                'users.first_name',
+                'users.last_name',
+                'users.email'
+            );
+        
+        // Add search functionality
+        if (search) {
+            query = query.where(function() {
+                this.where('users.first_name', 'like', `%${search}%`)
+                    .orWhere('users.last_name', 'like', `%${search}%`)
+                    .orWhere('users.email', 'like', `%${search}%`)
+                    .orWhere('wallets.id', 'like', `%${search}%`);
+            });
+        }
+        
+        const wallets = await query
+            .orderBy('wallets.created_at', 'desc')
+            .limit(limit)
+            .offset(offset);
+
+        // Get total count for pagination
+        let countQuery = knex('wallets').join('users', 'wallets.user_id', 'users.id');
+        if (search) {
+            countQuery = countQuery.where(function() {
+                this.where('users.first_name', 'like', `%${search}%`)
+                    .orWhere('users.last_name', 'like', `%${search}%`)
+                    .orWhere('users.email', 'like', `%${search}%`)
+                    .orWhere('wallets.id', '=', search);
+            });
+        }
+        const total = await countQuery.count('* as count').first();
+
+        return {
+            data: wallets.map(wallet => ({
+                id: wallet.id,
+                user_id: wallet.user_id,
+                balance: wallet.balance,
+                created_at: wallet.created_at,
+                updated_at: wallet.updated_at,
+                user: {
+                    first_name: wallet.first_name,
+                    last_name: wallet.last_name,
+                    email: wallet.email
+                }
+            })),
+            page,
+            limit,
+            total: Number(total?.count) || 0,
+        };
+    }
 }
