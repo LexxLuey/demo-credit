@@ -4,6 +4,25 @@ An optimized product roadmap to build and deliver this wallet service API. It is
 
 ---
 
+## Completed Improvements
+- Structured logging with Winston
+- Centralized error handling middleware
+- Input sanitization for all user input and search queries
+- Environment variable validation on startup
+- Query builder utility for DRY and optimized database access
+- Database indexes for frequently queried fields
+- Rate limiting (100 requests per 15 minutes per IP)
+- Monitoring and error logging
+
+## Next Steps
+- Add request/response metrics and health monitoring
+- Integrate external monitoring tools (e.g., Prometheus, Grafana)
+- Expand test coverage for edge cases and security
+- Enhance API documentation with OpenAPI/Swagger
+- Implement user roles and permissions
+
+---
+
 ### **Phase 1: Project Setup and Initial Infrastructure**  
 **Goal**: Set up the project structure, establish foundational configurations, and ensure all dependencies are in place.
 

@@ -5,6 +5,9 @@ import healthRouter from './modules/health/health.controller';
 import userRouter from './modules/users/user.controller';
 import walletRouter from './modules/wallet/wallet.controller';
 import { fauxAuth } from './middleware/fauxAuth';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import rateLimit from 'express-rate-limit';
+import logger from './utils/logger';
 
 const swaggerUi = require('swagger-ui-express');
 
@@ -17,7 +20,30 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
 
+// Rate limiting middleware (disabled during tests)
+if (process.env.NODE_ENV !== 'test') {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+  });
+  app.use(limiter);
+
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      status: 'error',
+      message: 'Too many requests, please try again later.'
+    }
+  });
+  app.use('/api/', apiLimiter);
+}
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Handle preflight requests
 app.options('*', cors());
@@ -52,5 +78,9 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 // Apply the prefix to all routes
 app.use('/api', apiRouter);
+
+// Error handling middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;

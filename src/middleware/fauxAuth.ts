@@ -1,7 +1,13 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import knex from '../config/knex';
+import logger from '../utils/logger';
 
 export const fauxAuth: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // During tests, trust req.authenticatedUser if already set by test setup
+    if (process.env.NODE_ENV === 'test' && req.authenticatedUser?.id) {
+        next();
+        return;
+    }
     try {
         const lastUser = await knex('users').orderBy('created_at', 'asc').first();
 
@@ -21,7 +27,10 @@ export const fauxAuth: RequestHandler = async (req: Request, res: Response, next
         }
         next();
     } catch (error) {
-        console.error(error);
+        logger.error('Error retrieving authenticated user', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString()
+        });
 
         res.status(500).json({ message: 'Error retrieving authenticated user' });
     }

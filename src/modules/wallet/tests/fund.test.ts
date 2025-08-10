@@ -1,47 +1,42 @@
 import request from 'supertest';
-import app from '../../../app';
+import express from 'express';
 import knex from '../../../config/knex';
 import { v4 as uuidv4 } from 'uuid';
-import { fauxAuth } from '../../../middleware/fauxAuth';
-
 
 describe('Wallet Funding Endpoint', () => {
     let walletId: string;
-    const userId = uuidv4();
+    let userId: string;
+    let testApp: express.Express;
 
     // Set up the test database
     beforeAll(async () => {
         await knex.migrate.latest({ directory: './src/migrations' });
-
-        // Create a unique user and wallet for testing
-        // const userId = uuidv4();
-        walletId = uuidv4();
-
-        // Insert test user and wallet
-        await knex('users').insert({
-            id: userId,
-            first_name: 'Test',
-            last_name: 'User',
-            email: 'testuser@example.com'
-        });
-
-        await knex('wallets').insert({
-            id: walletId,
-            user_id: userId,
-            balance: 500 // Initial balance for testing
-        });
-
-        app.use((req, res, next) => {
-            req.authenticatedUser = { id: userId, walletId: walletId, first_name: 'Test', last_name: 'User', email: 'testuser@example.com' };
-            next();
-        });
     });
 
-    afterEach(async () => {
-        app.use((req, res, next) => {
-            req.authenticatedUser = { id: userId, walletId: walletId, first_name: 'Test', last_name: 'User', email: 'testuser@example.com' };
+    beforeEach(async () => {
+        await knex.transaction(async (trx) => {
+            await trx('transactions').del();
+            await trx('wallets').del();
+            await trx('users').del();
+        });
+
+        // Generate fresh IDs for each test
+        walletId = uuidv4();
+        userId = uuidv4();
+        
+        // Insert test user and wallet for each test - USER FIRST!
+        await knex('users').insert({ id: userId, first_name: 'User', last_name: 'Fund', email: 'funduser@example.com' });
+        await knex('wallets').insert({ id: walletId, user_id: userId, balance: 100 });
+        
+        // Create isolated app for each test
+        testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, res, next) => {
+            req.authenticatedUser = { id: userId, walletId: walletId, first_name: 'User', last_name: 'Fund', email: 'funduser@example.com' };
             next();
         });
+        const walletRouter = (await import('../wallet.controller')).default;
+        testApp.use('/api/wallet', walletRouter);
     });
 
     afterAll(async () => {
@@ -49,7 +44,7 @@ describe('Wallet Funding Endpoint', () => {
     });
 
     test('Successful funding', async () => {
-        const response = await request(app)
+        const response = await request(testApp)
             .post('/api/wallet/fund')
             .send({
                 amount: 100,
@@ -60,9 +55,10 @@ describe('Wallet Funding Endpoint', () => {
     });
 
     test('Invalid wallet ID', async () => {
-
-        const originalAuth = app._router.stack.find((layer: any) => layer.handle === fauxAuth);
-        if (originalAuth) originalAuth.handle = (req: any, res: any, next: any) => {
+        // Create isolated app with invalid wallet ID
+        const invalidApp = express();
+        invalidApp.use(express.json());
+        invalidApp.use((req, res, next) => {
             req.authenticatedUser = {
                 id: userId,
                 walletId: 'invalid-wallet-id',
@@ -71,9 +67,11 @@ describe('Wallet Funding Endpoint', () => {
                 email: 'testuser@example.com'
             };
             next();
-        }; 
+        });
+        const walletRouter = (await import('../wallet.controller')).default;
+        invalidApp.use('/api/wallet', walletRouter);
 
-        const response = await request(app)
+        const response = await request(invalidApp)
             .post('/api/wallet/fund')
             .send({
                 amount: 100,
@@ -84,7 +82,7 @@ describe('Wallet Funding Endpoint', () => {
     });
 
     test('Invalid funding amount (negative)', async () => {
-        const response = await request(app)
+        const response = await request(testApp)
             .post('/api/wallet/fund')
             .send({
                 amount: -100, // Negative amount
@@ -99,7 +97,7 @@ describe('Wallet Funding Endpoint', () => {
     });
 
     test('Maximum transaction amount', async () => {
-        const response = await request(app)
+        const response = await request(testApp)
             .post('/api/wallet/fund')
             .send({
                 amount: 9999999999990,

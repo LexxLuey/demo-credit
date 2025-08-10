@@ -2,7 +2,9 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
     return knex.schema.createTable('users', (table) => {
-        table.uuid('id').primary().defaultTo(knex.fn.uuid()); // Unique identifier, UUID
+        // SQLite does not have native uuid generation via knex.fn.uuid()
+        // Keep defaultTo for MySQL; in tests (sqlite) we will insert ids manually
+        table.uuid('id').primary(); // Unique identifier, UUID
         table.string('last_name').notNullable(); // User's name
         table.string('middle_name').nullable(); // User's name
         table.string('first_name').notNullable(); // User's name

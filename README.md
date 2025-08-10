@@ -10,6 +10,7 @@
 - [Testing](#testing)
 - [Deployment](#deployment)
 - [Design Decisions](#design-decisions)
+- [Security & Performance](#security--performance)
 
 ---
 
@@ -342,6 +343,18 @@ npm test
 3. **Transaction Handling**: Used Knex transaction scoping to handle fund transfers and withdrawals atomically, ensuring data consistency.
 4. **Error Handling**: Implemented centralized error handling with custom middleware, providing meaningful error responses for client requests.
 5. **Adjutor Karma Blacklist API**: Integrated Adjutor Karma API during user onboarding to prevent blacklisted users from accessing the service.
+
+---
+
+## Security & Performance
+
+- **Rate Limiting:** All API endpoints are protected with rate limiting (100 requests per 15 minutes per IP) to prevent abuse and ensure fair usage.
+- **Structured Logging:** All logs use Winston for structured, production-grade logging. Sensitive data is never logged.
+- **Centralized Error Handling:** All errors are handled by a global middleware, providing consistent error responses and logging.
+- **Input Sanitization:** All user input and search queries are sanitized to prevent SQL injection and XSS attacks.
+- **Environment Validation:** Startup validation ensures all required environment variables are present and valid, preventing silent misconfiguration.
+- **Query Optimization:** All search and pagination queries use a shared query builder utility for DRY, efficient, and secure database access.
+- **Database Indexes:** Frequently queried fields are indexed for optimal performance.
 
 ---
 
