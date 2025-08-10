@@ -76,6 +76,12 @@ export class UserService {
 
             // Create user
             const userId = uuidv4();
+            const existingUser = await knex('users').where({ email }).first();
+            if (existingUser) {
+                logger.warn('User already exists', { email });
+                throw new Error('User already exists');
+            }
+            
             const newUser: IUser = new User(userId, first_name, last_name, email, middle_name);
 
             // Insert user in the database

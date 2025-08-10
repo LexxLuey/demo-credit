@@ -49,7 +49,13 @@ export class ConflictError extends AppError {
 }
 
 export class ExternalServiceError extends AppError {
-  constructor(service: string, message: string = 'External service error') {
-    super(`${service}: ${message}`, 400);
-  }
+    constructor(service: string, message: string = 'External service error') {
+        super(`${service}: ${message}`, 400);
+    }
 } 
+
+export class UserAlreadyExistsError extends AppError {
+    constructor(email: string) {
+        super(`User with email ${email} already exists`, 400);
+    }
+}

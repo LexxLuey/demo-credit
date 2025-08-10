@@ -70,7 +70,13 @@ export class QueryBuilder {
         // Add joins if specified
         if (joins) {
             joins.forEach(join => {
-                query = query.join(join.table, join.on, join.type || 'inner');
+                if (join.type === 'left') {
+                    query = query.leftJoin(join.table, knex.raw(join.on));
+                } else if (join.type === 'right') {
+                    query = query.rightJoin(join.table, knex.raw(join.on));
+                } else {
+                    query = query.innerJoin(join.table, knex.raw(join.on));
+                }
             });
         }
 
@@ -93,7 +99,13 @@ export class QueryBuilder {
         // Add joins to count query
         if (joins) {
             joins.forEach(join => {
-                countQuery = countQuery.join(join.table, join.on, join.type || 'inner');
+                if (join.type === 'left') {
+                    countQuery = countQuery.leftJoin(join.table, knex.raw(join.on));
+                } else if (join.type === 'right') {
+                    countQuery = countQuery.rightJoin(join.table, knex.raw(join.on));
+                } else {
+                    countQuery = countQuery.innerJoin(join.table, knex.raw(join.on));
+                }
             });
         }
 

@@ -20,6 +20,7 @@ export const errorHandler = (
         method: req.method,
         ip: req.ip,
         userAgent: req.get('User-Agent'),
+        correlationId: req.correlationId,
         timestamp: new Date().toISOString()
     });
 

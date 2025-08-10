@@ -12,6 +12,7 @@ declare global {
                 last_name: string,
                 email: string
             };
+            correlationId?: string;
         }
         export interface Response {
             authenticatedUser: {

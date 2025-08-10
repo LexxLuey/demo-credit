@@ -9,7 +9,7 @@ export const fauxAuth: RequestHandler = async (req: Request, res: Response, next
         return;
     }
     try {
-        const lastUser = await knex('users').orderBy('created_at', 'asc').first();
+        const lastUser = await knex('users').orderBy('created_at', 'desc').first();
 
         if (lastUser) {
             const wallet = await knex('wallets').where({ user_id: lastUser?.id }).first();
@@ -29,6 +29,7 @@ export const fauxAuth: RequestHandler = async (req: Request, res: Response, next
     } catch (error) {
         logger.error('Error retrieving authenticated user', {
             error: error instanceof Error ? error.message : 'Unknown error',
+            correlationId: req.correlationId,
             timestamp: new Date().toISOString()
         });
 

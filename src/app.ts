@@ -6,6 +6,7 @@ import userRouter from './modules/users/user.controller';
 import walletRouter from './modules/wallet/wallet.controller';
 import { fauxAuth } from './middleware/fauxAuth';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { correlationIdMiddleware } from './middleware/correlationId';
 import rateLimit from 'express-rate-limit';
 import logger from './utils/logger';
 
@@ -47,6 +48,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Handle preflight requests
 app.options('*', cors());
+
+// Add correlation ID to all requests for tracking
+app.use(correlationIdMiddleware);
 
 app.use(fauxAuth);
 

@@ -7,6 +7,7 @@ import { validateUserOnboarding } from './user.validators';
 import { validationResult } from 'express-validator';
 import { asyncHandler } from '../../middleware/errorHandler';
 import logger from '../../utils/logger';
+import { BlacklistError, UserAlreadyExistsError } from '../../types/errors';
 
 const userRouter = Router();
 
@@ -204,8 +205,23 @@ userRouter.post('/', validateUserOnboarding, asyncHandler(async (req: Request, r
     }
     const { first_name, middle_name, last_name, email } = req.body;
     
-    const user = await UserService.onboardUser(first_name, last_name, email, middle_name);
-    res.status(201).json(user);
-}));
+    try {
+        // Onboard user
+        const user = await UserService.onboardUser(first_name, last_name, email, middle_name);
+        res.status(201).json(user);
+    } catch (error) {
+        if (error instanceof BlacklistError) {
+            res.status(400).json({ message: 'User is blacklisted' });
+        } else if (error instanceof UserAlreadyExistsError) {
+            res.status(400).json({ message: error.message });
+        } else {
+            logger.error('Error onboarding user', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            res.status(500).json({ message: 'Unexpected Error Onboarding User' });
+        }
+    }
+}));    
 
 export default userRouter;
