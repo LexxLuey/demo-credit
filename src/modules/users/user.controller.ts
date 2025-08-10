@@ -1,28 +1,26 @@
 // src/modules/users/user.controller.ts
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { Request, Response, Router } from 'express';
+import { Request, Response, Router, NextFunction } from 'express';
 import { UserService } from './user.service';
 import { validateUserOnboarding } from './user.validators';
 import { validationResult } from 'express-validator';
+import { asyncHandler } from '../../middleware/errorHandler';
+import logger from '../../utils/logger';
+import { BlacklistError, UserAlreadyExistsError } from '../../types/errors';
 
 const userRouter = Router();
 
 // GET /users - Get all users with search and pagination
-userRouter.get('/', async (req: Request, res: Response) => {
-    try {
-        const { page = 1, limit = 10, search } = req.query;
-        const users = await UserService.getAllUsers(
-            parseInt(page as string),
-            parseInt(limit as string),
-            search as string
-        );
-        res.status(200).json(users);
-    } catch (error: any) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+userRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
+    const { page = 1, limit = 10, search } = req.query;
+    const users = await UserService.getAllUsers(
+        parseInt(page as string),
+        parseInt(limit as string),
+        search as string
+    );
+    res.status(200).json(users);
+}));
 
 /**
  * @swagger
@@ -199,7 +197,7 @@ userRouter.get('/', async (req: Request, res: Response) => {
  *                         type: string
  *                         example: "Email is required"
  */
-userRouter.post('/', validateUserOnboarding, async (req: Request, res: Response) => {
+userRouter.post('/', validateUserOnboarding, asyncHandler(async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         res.status(400).json({ errors: errors.array() });
@@ -208,11 +206,22 @@ userRouter.post('/', validateUserOnboarding, async (req: Request, res: Response)
     const { first_name, middle_name, last_name, email } = req.body;
     
     try {
+        // Onboard user
         const user = await UserService.onboardUser(first_name, last_name, email, middle_name);
         res.status(201).json(user);
-    } catch (error: any) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        if (error instanceof BlacklistError) {
+            res.status(400).json({ message: 'User is blacklisted' });
+        } else if (error instanceof UserAlreadyExistsError) {
+            res.status(400).json({ message: error.message });
+        } else {
+            logger.error('Error onboarding user', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            res.status(500).json({ message: 'Unexpected Error Onboarding User' });
+        }
     }
-});
+}));    
 
 export default userRouter;

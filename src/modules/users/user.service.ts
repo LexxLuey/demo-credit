@@ -5,6 +5,9 @@ import knex from '../../config/knex';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { WalletService } from '../wallet/wallet.service';
+import { BlacklistError, ExternalServiceError } from '../../types/errors';
+import logger from '../../utils/logger';
+import { QueryBuilder } from '../../utils/queryBuilder';
 
 dotenv.config();
 
@@ -17,23 +20,42 @@ export class UserService {
                 headers: {
                     'Authorization': `Bearer ${process.env.ADJUTOR_API_KEY}`,
                 },
-                validateStatus: (status) => status === 200 || status === 404
+                validateStatus: (status) => status === 200 || status === 404,
+                timeout: 10000 // 10 second timeout
             });
 
             // If response status is 200, the user is blacklisted
             if (response.status === 200) {
-                console.log('User is blacklisted:', response.data);
+                logger.info('User blacklist check completed', { 
+                    identity: identity, 
+                    isBlacklisted: true 
+                });
                 return true;
             }
 
             // If response status is 404, the user is not blacklisted
-            console.log('User is not blacklisted');
+            logger.info('User blacklist check completed', { 
+                identity: identity, 
+                isBlacklisted: false 
+            });
             return false;
 
         } catch (error) {
             // Handle any other errors that are not 404 or 200 statuses
-            console.error('Error fetching Karma data:', error);
-            return true;
+            logger.error('Error fetching Karma data', { 
+                identity: identity, 
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            
+            // For service unavailability, we should still allow the user to be onboarded
+            // but log the issue for monitoring
+            logger.warn('Karma API service unavailable, proceeding with user onboarding', {
+                identity: identity
+            });
+            
+            // Return false to allow onboarding when service is down
+            return false;
         }
     }
 
@@ -44,29 +66,52 @@ export class UserService {
         email: string,
         middle_name?: string
     ): Promise<IUser> {
-        // Blacklist check
-        const isBlacklisted = await this.checkCustomerKarma(email);
-        if (isBlacklisted) throw new Error('User is blacklisted');
+        try {
+            // Blacklist check
+            const isBlacklisted = await this.checkCustomerKarma(email);
+            if (isBlacklisted) {
+                logger.warn('User onboarding rejected due to blacklist', { email });
+                throw new BlacklistError();
+            }
 
-        // Create user
-        const userId = uuidv4();
-        const newUser: IUser = new User(userId, first_name, last_name, email, middle_name);
+            // Create user
+            const userId = uuidv4();
+            const existingUser = await knex('users').where({ email }).first();
+            if (existingUser) {
+                logger.warn('User already exists', { email });
+                throw new Error('User already exists');
+            }
+            
+            const newUser: IUser = new User(userId, first_name, last_name, email, middle_name);
 
-        // Insert user in the database
-        await knex('users').insert({
-            id: newUser.id,
-            first_name: newUser.first_name,
-            last_name: newUser.last_name,
-            middle_name: newUser.middle_name,
-            email: newUser.email,
-            created_at: newUser.createdAt,
-            updated_at: newUser.updatedAt
-        });
+            // Insert user in the database
+            await knex('users').insert({
+                id: newUser.id,
+                first_name: newUser.first_name,
+                last_name: newUser.last_name,
+                middle_name: newUser.middle_name,
+                email: newUser.email,
+                created_at: newUser.createdAt,
+                updated_at: newUser.updatedAt
+            });
 
-        await WalletService.createWalletForUser(newUser.id)
+            // Create wallet for the user
+            await WalletService.createWalletForUser(newUser.id);
 
+            logger.info('User onboarded successfully', { 
+                userId: newUser.id, 
+                email: newUser.email 
+            });
 
-        return newUser;
+            return newUser;
+        } catch (error) {
+            logger.error('Error during user onboarding', {
+                email,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+            });
+            throw error; // Re-throw to let the error handler deal with it
+        }
     }
 
     // Get all users with search and pagination
@@ -76,51 +121,44 @@ export class UserService {
         limit: number;
         total: number;
     }> {
-        const offset = (page - 1) * limit;
-        
-        let query = knex('users')
-            .select('id', 'first_name', 'middle_name', 'last_name', 'email', 'created_at', 'updated_at');
-        
-        // Add search functionality
-        if (search) {
-            query = query.where(function() {
-                this.where('first_name', 'like', `%${search}%`)
-                    .orWhere('last_name', 'like', `%${search}%`)
-                    .orWhere('email', 'like', `%${search}%`)
-                    .orWhere('middle_name', 'like', `%${search}%`);
-            });
-        }
-        
-        const users = await query
-            .orderBy('created_at', 'desc')
-            .limit(limit)
-            .offset(offset);
+        // Sanitize and validate input
+        const sanitizedSearch = search ? QueryBuilder.sanitizeSearchInput(search) : undefined;
+        const { page: validatedPage, limit: validatedLimit } = QueryBuilder.validatePagination(page, limit);
 
-        // Get total count for pagination
-        let countQuery = knex('users');
-        if (search) {
-            countQuery = countQuery.where(function() {
-                this.where('first_name', 'like', `%${search}%`)
-                    .orWhere('last_name', 'like', `%${search}%`)
-                    .orWhere('email', 'like', `%${search}%`)
-                    .orWhere('middle_name', 'like', `%${search}%`);
-            });
-        }
-        const total = await countQuery.count('* as count').first();
+        // Build query using QueryBuilder
+        const result = await QueryBuilder.buildPaginatedQuery(
+            knex,
+            'users',
+            ['id', 'first_name', 'middle_name', 'last_name', 'email', 'created_at', 'updated_at'],
+            {
+                search: sanitizedSearch,
+                searchConfig: {
+                    fields: ['first_name', 'last_name', 'email', 'middle_name']
+                },
+                pagination: {
+                    page: validatedPage,
+                    limit: validatedLimit
+                },
+                orderBy: { column: 'created_at', direction: 'desc' }
+            }
+        );
+
+        // Transform data to User objects
+        const users = result.data.map(user => new User(
+            user.id,
+            user.first_name,
+            user.last_name,
+            user.email,
+            user.middle_name,
+            user.created_at,
+            user.updated_at
+        ));
 
         return {
-            data: users.map(user => new User(
-                user.id,
-                user.first_name,
-                user.last_name,
-                user.email,
-                user.middle_name,
-                user.created_at,
-                user.updated_at
-            )),
-            page,
-            limit,
-            total: Number(total?.count) || 0,
+            data: users,
+            page: result.page,
+            limit: result.limit,
+            total: result.total
         };
     }
 }

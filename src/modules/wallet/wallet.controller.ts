@@ -4,6 +4,8 @@ import { Request, Response, Router } from 'express';
 import { WalletService } from './wallet.service';
 import { validateAmount } from './wallet.validators';
 import { validationResult } from 'express-validator';
+import { asyncHandler } from '../../middleware/errorHandler';
+import logger from '../../utils/logger';
 
 const walletRouter = Router();
 
@@ -92,20 +94,15 @@ const walletRouter = Router();
  *                   type: string
  *                   example: "Internal server error"
  */
-walletRouter.get('/', async (req: Request, res: Response) => {
-    try {
-        const { page = 1, limit = 10, search } = req.query;
-        const wallets = await WalletService.getAllWallets(
-            parseInt(page as string),
-            parseInt(limit as string),
-            search as string
-        );
-        res.status(200).json(wallets);
-    } catch (error: any) {
-        console.error('Error fetching wallets:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+walletRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
+    const { page = 1, limit = 10, search } = req.query;
+    const wallets = await WalletService.getAllWallets(
+        parseInt(page as string),
+        parseInt(limit as string),
+        search as string
+    );
+    res.status(200).json(wallets);
+}));
 
 /**
  * @swagger
@@ -318,8 +315,8 @@ walletRouter.post('/fund', validateAmount, async (req: Request, res: Response) =
     }
 
     try {
-        const updatedWallet = await WalletService.fundWallet(walletId, amount);
-        res.status(200).json(updatedWallet);
+        await WalletService.fundWallet(walletId, amount);
+        res.status(200).json({ message: 'Wallet funding successful' });
     } catch (error) {        
         res.status(400).json({ message: error instanceof Error ? error.message : 'Error Funding Wallet' });
     }
@@ -428,8 +425,8 @@ walletRouter.post('/transfer', validateAmount, async (req: Request, res: Respons
     }
 
     try {
-        const transferResult = await WalletService.transferFunds(senderWalletId, receiverWalletId, amount);
-        res.status(200).json(transferResult);
+        await WalletService.transferFunds(senderWalletId, receiverWalletId, amount);
+        res.status(200).json({ message: 'Transfer successful' });
     } catch (error) {
         res.status(400).json({ message: error instanceof Error ? error.message : 'Transfer failed' });
     }
@@ -528,8 +525,8 @@ walletRouter.post('/withdraw', validateAmount, async (req: Request, res: Respons
     }
 
     try {
-        const withdrawalResult = await WalletService.withdrawFunds(walletId, amount);
-        res.status(200).json(withdrawalResult);
+        await WalletService.withdrawFunds(walletId, amount);
+        res.status(200).json({ message: 'Withdrawal successful' });
     } catch (error) {
         res.status(400).json({ message: error instanceof Error ? error.message : 'Withdrawal failed' });
     }
@@ -720,7 +717,7 @@ walletRouter.get('/balance', async (req: Request, res: Response) => {
     }
 
     try {
-        const balance = await WalletService.getBalance(walletId as string);
+        const balance = await WalletService.getWalletBalance(walletId as string);
         res.status(200).json({ walletId, balance });
     } catch (error) {
         res.status(400).json({ message: error instanceof Error ? error.message : 'Failed to retrieve balance' });
